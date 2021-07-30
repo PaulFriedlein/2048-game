@@ -1,0 +1,394 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <style>
+            body {
+                text-align: center;
+                background-color: rgb(252, 252, 205);
+            }
+            #gameBoard {
+                box-shadow: 4px 8px 3px grey;
+                background-color: burlywood;
+            }
+            #downButton {
+                display: block;
+                margin:auto;
+                width: 145px;
+                padding:  5px;
+                font-family: fantasy;
+                color: slategray;
+            }
+            #upButton {
+                display: block;
+                margin: auto;
+                width: 145px;
+                padding:  5px;
+                font-family: fantasy;
+                color: slategray;
+            }
+            #leftButton {
+                margin-top: 5px;
+                margin-bottom: 5px;
+                width: 70px;
+                padding: 5px;
+                font-family: fantasy;
+                color: slategray;
+            }
+            #rightButton {
+                margin-top: 5px;
+                width: 70px;
+                padding: 5px;
+                font-family: fantasy;
+                color: slategray;
+            }
+            #scoreBox {
+                margin-bottom: 10px;
+                margin-top: 5px;
+                font-family: fantasy;
+                font-size: 20px;
+            }
+            div {
+                font-family: fantasy;
+                color:slategray;
+            }
+
+        </style>
+    </head>
+    <body id = "body">
+        <canvas id="gameBoard" width="480px" height="480px"></canvas>
+        <hr>
+        <div> Score: <p id="scoreBox">0</p></div>
+        <button type="button" id="upButton">Up</button>
+        <button type="button" id="leftButton">Left</button>
+        <button type="button" id="rightButton">Right</button>
+        <button type="button" id="downButton">Down</button>
+        
+        <script>
+            var gameBoard = document.getElementById("gameBoard");
+            var ctx = gameBoard.getContext("2d");
+            var score = 0;
+            var scoreBox = document.getElementById("scoreBox");
+            var body = document.getElementsByTagName("body");
+
+            // This keeps track if a shift or merge as occured.
+            // If it has, it becomes 1 (true), else it remains 0.
+            // A new tile is only place if this is 1.
+            var stateChanged = 0;
+
+            // Create a 2d array of elements to control game logic
+            let board_values = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+            ];
+
+            // Make tile object
+            var tile = {
+                row: 0,
+                col: 0,
+                size: 120,
+                number: 2,
+                color: "AntiqueWhite",
+                textColor: "SlateGray",
+                draw() {
+                    let gradient = ctx.createLinearGradient(0, 0, 400, 0);
+                    gradient.addColorStop(0, this.color);
+                    gradient.addColorStop(1, "white");
+                    ctx.beginPath();
+                    ctx.translate(this.size * this.col, this.size * this.row);
+                    ctx.rect(0,0,this.size, this.size);
+                    ctx.fillStyle = gradient;//this.color;
+                    ctx.font = "30px fantasy";
+                    ctx.textAlign = "center"
+                    ctx.fill();
+                    ctx.fillStyle = this.textColor;
+                    ctx.fillText(this.number, this.size/2, this.size/1.8);
+                    ctx.translate(-this.size * this.col, -this.size * this.row);
+                }
+            }
+
+            //Place 2 new tiles at start of game
+            placeNewTile();
+            placeNewTile();
+
+            // Display the table in the console
+            //console.table(board_values);
+
+            // Draw the board
+            drawBoard();
+
+            // Button control firing goes here:
+            document.getElementById("leftButton").addEventListener("click", leftButtonClicked, false);
+            document.getElementById("rightButton").addEventListener("click", rightButtonClicked, false);
+            document.getElementById("downButton").addEventListener("click", downButtonClicked, false);
+            document.getElementById("upButton").addEventListener("click", upButtonClicked, false);
+            // Any click will trigger the isGameOver function
+            document.getElementById("body").addEventListener("click", isGameOver, false);
+
+            //------------------------------------------------------------------------
+            // Make a function to draw all tiles on the board
+            function drawBoard() {
+                ctx.clearRect(0, 0, gameBoard.width, gameBoard.height);
+                for (var i = 0; i < board_values.length; i++) {
+                    for (var j = 0; j < board_values.length; j++) {
+                        if (board_values[i][j] != 0) {
+                            if (board_values[i][j] == 2) {
+                                tile.color = "#ffddcc";
+                                tile.textColor = "SlateGray"
+                            }
+                            else if (board_values[i][j] == 4) {
+                                tile.color = "#ffa6a1";
+                                tile.textColor = "SlateGray"
+                            }
+                            else if (board_values[i][j] == 8) {
+                                tile.color = "#ff8880";
+                                tile.textColor = "SlateGray"
+                            }
+                            else if (board_values[i][j] == 16) {
+                                tile.color = "#FF6863";
+                                tile.textColor = "white"
+                            }
+                            else if (board_values[i][j] == 32) {
+                                tile.color = "#F33B35";
+                                tile.textColor = "white";
+                            }
+                            else if (board_values[i][j] == 64) {
+                                tile.color = "#FD1810";
+                                tile.textColor = "white";
+                            }
+                            else if (board_values[i][j] == 128) {
+                                tile.color = "#FF6521";
+                                tile.textColor = "white";
+                            }
+                            else if (board_values[i][j] == 256) {
+                                tile.color = "#FF5E17";
+                                tile.textColor = "white";
+                            }
+                            else if (board_values[i][j] == 512) {
+                                tile.color = "#FF9417";
+                                tile.textColor = "white";
+                            }
+                            else if (board_values[i][j] == 1024) {
+                                tile.color = "#FFA617";
+                                tile.textColor = "white";
+                            }
+                            else if (board_values[i][j] == 2048) {
+                                tile.color = "#FFD417";
+                                tile.textColor = "white";
+                            }
+                            else {
+                                tile.color = "#F8FF17";
+                                tile.textColor = "SlateGray";
+                            }
+                            tile.row = i;
+                            tile.col = j;
+                            tile.number = board_values[i][j];
+                            tile.draw();
+                        }
+                    }
+                }
+            }
+            //------------------------------------------------------------------------
+            // Make a function that randomly generates 2 or 4 and returns that value
+            function newTileValue() {
+                var num = Math.floor(Math.random() * 2);
+                //console.log(num);
+                if (num == 0)
+                    return 2;
+                else
+                    return 4;
+            }
+            //------------------------------------------------------------------------
+            // Make a function that randomly returns 0 - 3. Use to Choose new place to insert new tile
+            function randomIndex() {
+                return Math.floor(Math.random() * board_values.length);
+            }
+            //------------------------------------------------------------------------
+            // This function randomly places new tile on board
+            function placeNewTile() {
+                var tryAgain = 1;
+                while (tryAgain) {
+                    var x = randomIndex();
+                    var y = randomIndex();
+                    // Confirm that location isn't already taken
+                    if (board_values[x][y] == 0) {
+                        board_values[x][y] = newTileValue();
+                        tryAgain = 0;
+                    }
+                }
+            }
+            //------------------------------------------------------------------------
+            // Create function that shifts all tiles in a given direction
+            function shift() {
+                let values = 0;
+                let row_values = [];
+                let empty_spaces = [];
+                let new_row = [];
+
+                // For every row, shift all values to the right
+                for (var i = 0; i < board_values.length; i++) {
+
+                    // Creates array (row_values) to hold all values in a row
+                    for (var j = 0; j < board_values.length; j++) {
+                        if (board_values[i][j] > 0) {
+                            row_values.push(board_values[i][j]);
+                            values++;
+                        }
+                    }
+                    // Creates array on non values for empty spaces
+                    for (var j = 0; j < board_values.length-values; j++) {
+                        empty_spaces.push(0);
+                    }
+
+                    // Add the empty spaces to the beginning of row_values
+                    new_row = empty_spaces.concat(row_values);
+
+                    for (var j = 0; j < board_values.length; j++) {
+                        if (board_values[i][j] != new_row[j]) {
+                            stateChanged = 1;
+                        }
+                    }
+                    
+                    // Replace the row in board_values with the shifted row array (new_row)
+                    board_values[i] = new_row;
+
+                    // Reset info for next interation of i
+                    values = 0;
+                    row_values = [];
+                    empty_spaces = [];
+                    new_row = [];
+                }
+            }
+            //------------------------------------------------------------------------
+            // Create function to merge tiles with same value together
+            function merge() {
+                for (var i = 0; i < 4; i++) {
+                    for (var j = 3; j > 0; j--) {
+                        if (board_values[i][j] == board_values[i][j-1] && board_values[i][j] != 0) {
+                            board_values[i][j] += board_values[i][j];
+                            score += board_values[i][j];
+                            board_values[i][j-1] = 0;
+                            stateChanged = 1;
+                        }
+                    }
+                }
+            }
+            //------------------------------------------------------------------------
+            // Create function to handle right button click (shifts right, merges, and shifts again)
+            // This will also be used for all the other button clicks in combination with the
+            // transpose and mirror functions
+            function rightButtonClicked() {
+                shift();
+                merge();
+                shift();
+
+                if (stateChanged) {
+                    placeNewTile();
+                }
+                stateChanged = 0;
+                console.table(board_values);
+                drawBoard();
+                scoreBox.innerHTML = score;
+            }
+            //------------------------------------------------------------------------
+            // Called if left button is clicked
+            function leftButtonClicked() {
+                mirrorBoard();
+                rightButtonClicked();
+                mirrorBoard();
+                console.table(board_values);
+                drawBoard();
+            }
+            //------------------------------------------------------------------------
+            // Called if down button is clicked
+            function downButtonClicked() {
+                transposeBoard();
+                rightButtonClicked();
+                transposeBoard();
+                console.table(board_values);
+                drawBoard();
+            }
+            //------------------------------------------------------------------------
+            // Called if up button is clicked
+            function upButtonClicked() {
+                transposeBoard();
+                leftButtonClicked();
+                transposeBoard();
+                console.table(board_values);
+                drawBoard();
+            }
+            //------------------------------------------------------------------------
+            // This function tranposes the board to to make shift and merge functions easier
+            function transposeBoard() {
+
+                let board_transposed = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                ];
+
+                for (var i = 0; i < board_values.length; i++) {
+                    for (var j = 0; j < board_values.length; j++) {
+                        board_transposed[i][j] = board_values[j][i];
+                    }
+                }
+                board_values = board_transposed;
+            }
+            //------------------------------------------------------------------------
+            // This function mirrors the board to to make shift and merge functions easier
+            function mirrorBoard() {
+                for (var i = 0; i < board_values.length; i++) 
+                    board_values[i] = board_values[i].reverse()
+            }
+            //------------------------------------------------------------------------
+            // Check to see if game is over (no possible moves left)
+            function isGameOver() {
+                drawBoard();
+                let game_over = true;
+                for (var i = 0; i < board_values.length; i++) {
+                    for (var j = 0; j <board_values.length; j++) {
+                        for (var k = -1; k < 2; k++) {
+                            for (var l = -1; l < 2; l++) {
+                                let x = i+k;
+                                let y = j+l;
+                                if (x >= 0 && x < board_values.length && y >= 0 && y < board_values.length) {
+                                    if ((x == i && y != j) || (x != i && y == j))
+                                        if (board_values[i][j] == board_values[x][y] || board_values[i][j] == 0)
+                                            game_over = false;
+                                }
+                            }
+                        }
+
+                    }
+                }
+                if (game_over == true) {
+                    window.alert("Game Over");
+                    clearBoard();
+                    placeNewTile();
+                    placeNewTile();
+                    score = 0;
+                    scoreBox.innerHTML = 0;
+                    drawBoard();
+                }
+            }
+            //------------------------------------------------------------------------
+            // Create function to clear the board
+            function clearBoard() {
+                board_values = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                ];
+                drawBoard();
+            }
+
+
+        </script>
+    </body>
+    </html>
